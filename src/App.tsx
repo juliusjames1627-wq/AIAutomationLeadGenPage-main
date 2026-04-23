@@ -18,6 +18,8 @@ import {
   Globe,
   Building2,
   Loader2,
+  Cpu,
+  Layers,
 } from 'lucide-react';
 
 // --- Data ---
@@ -90,36 +92,133 @@ function FAQItem({ question, answer }: { question: string, answer: string }) {
   );
 }
 
+function ExpandableChecklist() {
+  const [isOpen, setIsOpen] = useState(false);
+  const items = [
+    "CRM & Lead Management workflows",
+    "Internal communication & Slack/Email triage",
+    "Data entry & reporting bottlenecks",
+    "Customer onboarding processes",
+    "Document generation & management",
+    "Repetitive scheduling & task management"
+  ];
+
+  return (
+    <div className="mt-6 border border-white/10 rounded-xl overflow-hidden bg-white/5">
+      <button 
+        onClick={() => setIsOpen(!isOpen)}
+        className="w-full px-5 py-4 flex items-center justify-between hover:bg-white/5 transition-colors"
+      >
+        <span className="text-sm font-semibold text-gray-300">See exactly what gets audited</span>
+        {isOpen ? <ChevronUp className="w-4 h-4 text-teal-400" /> : <ChevronDown className="w-4 h-4 text-gray-400" />}
+      </button>
+      <div className={`transition-all duration-300 ease-in-out overflow-hidden ${isOpen ? 'max-h-[400px] border-t border-white/10' : 'max-h-0'}`}>
+        <div className="p-5 grid grid-cols-1 gap-3">
+          {items.map((item, i) => (
+            <div key={i} className="flex items-center gap-3 text-xs text-gray-400">
+              <CheckCircle className="w-3.5 h-3.5 text-teal-500/50" />
+              {item}
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ExitIntentModal({ onClose, onAccept }: { onClose: () => void, onAccept: () => void }) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+      <div className="bg-gradient-to-br from-[#111] to-[#0a0a0a] border border-teal-500/30 rounded-2xl p-10 max-w-lg w-full text-center shadow-[0_0_50px_rgba(20,184,166,0.15)] animate-in fade-in zoom-in duration-300 relative overflow-hidden">
+        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-teal-500 to-transparent" />
+        <button
+          onClick={onClose}
+          className="absolute top-5 right-5 text-gray-500 hover:text-gray-300 transition-colors"
+        >
+          ✕
+        </button>
+        <div className="w-16 h-16 bg-teal-500/10 border border-teal-500/30 rounded-full flex items-center justify-center mx-auto mb-6">
+          <Zap className="w-8 h-8 text-teal-400" />
+        </div>
+        <h3 className="text-3xl font-bold text-white mb-4">Wait! Don't leave empty-handed</h3>
+        <p className="text-gray-400 leading-relaxed mb-8 text-lg">
+          Get our <span className="text-white font-semibold">"Top 5 Automation Wins for 2026"</span> PDF guide for free before you go.
+        </p>
+        <div className="flex flex-col gap-4">
+          <button
+            onClick={onAccept}
+            className="w-full bg-teal-500 hover:bg-teal-400 text-black font-bold py-4 rounded-xl transition-all duration-300 shadow-[0_4px_20px_rgba(20,184,166,0.3)]"
+          >
+            Send Me the Guide
+          </button>
+          <button
+            onClick={onClose}
+            className="text-sm text-gray-500 hover:text-gray-400 transition-colors"
+          >
+            No thanks, I'll figure it out myself
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function AuditModal({ onClose }: { onClose: () => void }) {
-  const [form, setForm] = useState({ name: '', email: '', company: '', challenge: '' });
+  const [step, setStep] = useState(1);
+  const [form, setForm] = useState({
+    name: '',
+    email: '',
+    company: '',
+    industry: '',
+    companySize: '',
+    phone: '',
+    challenge: ''
+  });
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
 
-  const validate = () => {
+  const validateStep = (currentStep: number) => {
     const newErrors: { [key: string]: string } = {};
-    if (!form.name.trim()) newErrors.name = "Name is required";
-    if (!form.email.trim()) {
-      newErrors.email = "Email is required";
-    } else if (!/\S+@\S+\.\S+/.test(form.email)) {
-      newErrors.email = "Please enter a valid email address";
+    if (currentStep === 1) {
+      if (!form.name.trim()) newErrors.name = "Name is required";
+      if (!form.email.trim()) {
+        newErrors.email = "Email is required";
+      } else if (!/\S+@\S+\.\S+/.test(form.email)) {
+        newErrors.email = "Please enter a valid email address";
+      }
+      if (!form.company.trim()) newErrors.company = "Company name is required";
     }
-    if (!form.company.trim()) newErrors.company = "Company name is required";
+    if (currentStep === 2) {
+      if (!form.industry) newErrors.industry = "Industry is required";
+      if (!form.companySize) newErrors.companySize = "Company size is required";
+    }
     return newErrors;
   };
 
+  const nextStep = () => {
+    const stepErrors = validateStep(step);
+    if (Object.keys(stepErrors).length > 0) {
+      setErrors(stepErrors);
+      return;
+    }
+    setErrors({});
+    setStep(s => s + 1);
+  };
+
+  const prevStep = () => setStep(s => s - 1);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const validationErrors = validate();
-    if (Object.keys(validationErrors).length > 0) {
-      setErrors(validationErrors);
+    const stepErrors = validateStep(step);
+    if (Object.keys(stepErrors).length > 0) {
+      setErrors(stepErrors);
       return;
     }
 
     setIsSubmitting(true);
     setErrors({});
 
-    // Simulate API call to "Bolt Database"
     try {
       await new Promise(resolve => setTimeout(resolve, 1500));
       console.log('Form submitted to Bolt Database:', {
@@ -167,68 +266,162 @@ function AuditModal({ onClose }: { onClose: () => void }) {
         >
           ✕
         </button>
-        <h3 className="text-2xl font-semibold text-white mb-1">Request Your Free Audit</h3>
-        <p className="text-gray-400 text-sm mb-6">No commitment required. We'll get back to you within one business day.</p>
+
+        <div className="mb-8">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-2xl font-semibold text-white">Request Your Free Audit</h3>
+            <span className="text-xs font-medium text-teal-500/70 bg-teal-500/5 px-2 py-1 rounded border border-teal-500/10">Step {step}/3</span>
+          </div>
+          <div className="w-full bg-white/5 h-1 rounded-full overflow-hidden">
+            <div
+              className="bg-teal-500 h-full transition-all duration-500 ease-out"
+              style={{ width: `${(step / 3) * 100}%` }}
+            />
+          </div>
+        </div>
+
         <form onSubmit={handleSubmit} className="space-y-5">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="text-xs text-gray-400 block mb-1.5">Your Name</label>
-              <input
-                type="text"
-                value={form.name}
-                onChange={e => setForm({ ...form, name: e.target.value })}
-                placeholder="Alex Johnson"
-                className={`w-full bg-white/5 border ${errors.name ? 'border-red-500/50' : 'border-white/10'} rounded-lg px-4 py-2.5 text-white text-sm placeholder-gray-600 focus:outline-none focus:border-teal-500/50 focus:bg-white/[0.08] transition-all`}
-              />
-              {errors.name && <p className="text-[10px] text-red-400 mt-1">{errors.name}</p>}
+          {step === 1 && (
+            <div className="space-y-5 animate-in fade-in slide-in-from-right-4 duration-300">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="text-xs text-gray-400 block mb-1.5">Your Name</label>
+                  <input
+                    type="text"
+                    value={form.name}
+                    onChange={e => setForm({ ...form, name: e.target.value })}
+                    placeholder="Alex Johnson"
+                    className={`w-full bg-white/5 border ${errors.name ? 'border-red-500/50' : 'border-white/10'} rounded-lg px-4 py-2.5 text-white text-sm placeholder-gray-600 focus:outline-none focus:border-teal-500/50 transition-all`}
+                  />
+                  {errors.name && <p className="text-[10px] text-red-400 mt-1">{errors.name}</p>}
+                </div>
+                <div>
+                  <label className="text-xs text-gray-400 block mb-1.5">Work Email</label>
+                  <input
+                    type="email"
+                    value={form.email}
+                    onChange={e => setForm({ ...form, email: e.target.value })}
+                    placeholder="alex@company.com"
+                    className={`w-full bg-white/5 border ${errors.email ? 'border-red-500/50' : 'border-white/10'} rounded-lg px-4 py-2.5 text-white text-sm placeholder-gray-600 focus:outline-none focus:border-teal-500/50 transition-all`}
+                  />
+                  {errors.email && <p className="text-[10px] text-red-400 mt-1">{errors.email}</p>}
+                </div>
+              </div>
+              <div>
+                <label className="text-xs text-gray-400 block mb-1.5">Company Name</label>
+                <input
+                  type="text"
+                  value={form.company}
+                  onChange={e => setForm({ ...form, company: e.target.value })}
+                  placeholder="Acme Corp"
+                  className={`w-full bg-white/5 border ${errors.company ? 'border-red-500/50' : 'border-white/10'} rounded-lg px-4 py-2.5 text-white text-sm placeholder-gray-600 focus:outline-none focus:border-teal-500/50 transition-all`}
+                />
+                {errors.company && <p className="text-[10px] text-red-400 mt-1">{errors.company}</p>}
+              </div>
             </div>
-            <div>
-              <label className="text-xs text-gray-400 block mb-1.5">Work Email</label>
-              <input
-                type="email"
-                value={form.email}
-                onChange={e => setForm({ ...form, email: e.target.value })}
-                placeholder="alex@company.com"
-                className={`w-full bg-white/5 border ${errors.email ? 'border-red-500/50' : 'border-white/10'} rounded-lg px-4 py-2.5 text-white text-sm placeholder-gray-600 focus:outline-none focus:border-teal-500/50 transition-all`}
-              />
-              {errors.email && <p className="text-[10px] text-red-400 mt-1">{errors.email}</p>}
+          )}
+
+          {step === 2 && (
+            <div className="space-y-5 animate-in fade-in slide-in-from-right-4 duration-300">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="text-xs text-gray-400 block mb-1.5">Industry</label>
+                  <select
+                    value={form.industry}
+                    onChange={e => setForm({ ...form, industry: e.target.value })}
+                    className={`w-full bg-white/5 border ${errors.industry ? 'border-red-500/50' : 'border-white/10'} rounded-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-teal-500/50 transition-all appearance-none`}
+                  >
+                    <option value="" disabled className="bg-[#111]">Select Industry</option>
+                    <option value="logistics" className="bg-[#111]">Logistics</option>
+                    <option value="saas" className="bg-[#111]">SaaS</option>
+                    <option value="healthcare" className="bg-[#111]">Healthcare</option>
+                    <option value="finance" className="bg-[#111]">Finance</option>
+                    <option value="other" className="bg-[#111]">Other</option>
+                  </select>
+                  {errors.industry && <p className="text-[10px] text-red-400 mt-1">{errors.industry}</p>}
+                </div>
+                <div>
+                  <label className="text-xs text-gray-400 block mb-1.5">Company Size</label>
+                  <select
+                    value={form.companySize}
+                    onChange={e => setForm({ ...form, companySize: e.target.value })}
+                    className={`w-full bg-white/5 border ${errors.companySize ? 'border-red-500/50' : 'border-white/10'} rounded-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-teal-500/50 transition-all appearance-none`}
+                  >
+                    <option value="" disabled className="bg-[#111]">Select size</option>
+                    <option value="1-10" className="bg-[#111]">1-10 employees</option>
+                    <option value="11-50" className="bg-[#111]">11-50 employees</option>
+                    <option value="51-200" className="bg-[#111]">51-200 employees</option>
+                    <option value="201+" className="bg-[#111]">201+ employees</option>
+                  </select>
+                  {errors.companySize && <p className="text-[10px] text-red-400 mt-1">{errors.companySize}</p>}
+                </div>
+              </div>
+              <div>
+                <label className="text-xs text-gray-400 block mb-1.5">Phone Number (Optional)</label>
+                <input
+                  type="tel"
+                  value={form.phone}
+                  onChange={e => setForm({ ...form, phone: e.target.value })}
+                  placeholder="+1 (555) 000-0000"
+                  className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2.5 text-white text-sm placeholder-gray-600 focus:outline-none focus:border-teal-500/50 transition-all"
+                />
+              </div>
             </div>
-          </div>
-          <div>
-            <label className="text-xs text-gray-400 block mb-1.5">Company Name</label>
-            <input
-              type="text"
-              value={form.company}
-              onChange={e => setForm({ ...form, company: e.target.value })}
-              placeholder="Acme Corp"
-              className={`w-full bg-white/5 border ${errors.company ? 'border-red-500/50' : 'border-white/10'} rounded-lg px-4 py-2.5 text-white text-sm placeholder-gray-600 focus:outline-none focus:border-teal-500/50 transition-all`}
-            />
-            {errors.company && <p className="text-[10px] text-red-400 mt-1">{errors.company}</p>}
-          </div>
-          <div>
-            <label className="text-xs text-gray-400 block mb-1.5">Biggest operational challenge (optional)</label>
-            <textarea
-              value={form.challenge}
-              onChange={e => setForm({ ...form, challenge: e.target.value })}
-              placeholder="e.g. Manual data entry, slow onboarding, repetitive reporting..."
-              rows={3}
-              className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2.5 text-white text-sm placeholder-gray-600 focus:outline-none focus:border-teal-500/50 transition-all resize-none"
-            />
-          </div>
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className="w-full bg-teal-500 hover:bg-teal-400 disabled:bg-teal-500/50 text-black font-semibold py-3 rounded-lg transition-all duration-200 flex items-center justify-center gap-2 group"
-          >
-            {isSubmitting ? (
-              <Loader2 className="w-5 h-5 animate-spin" />
-            ) : (
-              <>
-                Submit Request
-                <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
-              </>
+          )}
+
+          {step === 3 && (
+            <div className="space-y-5 animate-in fade-in slide-in-from-right-4 duration-300">
+              <div>
+                <label className="text-xs text-gray-400 block mb-1.5">Biggest operational challenge</label>
+                <textarea
+                  value={form.challenge}
+                  onChange={e => setForm({ ...form, challenge: e.target.value })}
+                  placeholder="e.g. Manual data entry, slow onboarding, repetitive reporting..."
+                  rows={4}
+                  className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2.5 text-white text-sm placeholder-gray-600 focus:outline-none focus:border-teal-500/50 transition-all resize-none"
+                />
+                <p className="text-[10px] text-gray-500 mt-2">The more detail you provide, the better we can prepare for your audit.</p>
+              </div>
+            </div>
+          )}
+
+          <div className="flex gap-3 pt-2">
+            {step > 1 && (
+              <button
+                type="button"
+                onClick={prevStep}
+                className="flex-1 bg-white/5 hover:bg-white/10 border border-white/10 text-white font-semibold py-3 rounded-lg transition-all duration-200"
+              >
+                Back
+              </button>
             )}
-          </button>
+            {step < 3 ? (
+              <button
+                type="button"
+                onClick={nextStep}
+                className="flex-[2] bg-teal-500 hover:bg-teal-400 text-black font-semibold py-3 rounded-lg transition-all duration-200 flex items-center justify-center gap-2 group"
+              >
+                Continue
+                <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+              </button>
+            ) : (
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className="flex-[2] bg-teal-500 hover:bg-teal-400 disabled:bg-teal-500/50 text-black font-semibold py-3 rounded-lg transition-all duration-200 flex items-center justify-center gap-2 group"
+              >
+                {isSubmitting ? (
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                ) : (
+                  <>
+                    Submit Request
+                    <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+                  </>
+                )}
+              </button>
+            )}
+          </div>
+
           <div className="flex flex-col gap-2">
             <p className="text-[10px] text-gray-600 text-center">We never share your information with third parties.</p>
             <p className="text-[10px] text-teal-500/70 text-center font-medium italic">You'll hear from us by tomorrow at 9 AM</p>
@@ -239,33 +432,116 @@ function AuditModal({ onClose }: { onClose: () => void }) {
   );
 }
 
+
 export default function App() {
   const [modalOpen, setModalOpen] = useState(false);
+  const [exitIntentOpen, setExitIntentOpen] = useState(false);
+  const [hasShownExitIntent, setHasShownExitIntent] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [scrollProgress, setScrollProgress] = useState(0);
+  const [activeSection, setActiveSection] = useState('hero');
 
   useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 20);
+    const handleMouseOut = (e: MouseEvent) => {
+      if (e.clientY <= 0 && !hasShownExitIntent) {
+        setExitIntentOpen(true);
+        setHasShownExitIntent(true);
+      }
+    };
+
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 20);
+      const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+      const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+      const scrolled_pct = (winScroll / height) * 100;
+      setScrollProgress(scrolled_pct);
+    };
+
+    const observerOptions = {
+      root: null,
+      rootMargin: '-10% 0px -80% 0px',
+      threshold: 0
+    };
+
+    const observerCallback = (entries: IntersectionObserverEntry[]) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          setActiveSection(entry.target.id);
+        }
+      });
+    };
+
+    const observer = new IntersectionObserver(observerCallback, observerOptions);
+    const sections = ['hero', 'audit', 'wins', 'process', 'faq'];
+    sections.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) observer.observe(el);
+    });
+
+    window.addEventListener('mouseout', handleMouseOut);
     window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
+    return () => {
+      window.removeEventListener('mouseout', handleMouseOut);
+      window.removeEventListener('scroll', handleScroll);
+      observer.disconnect();
+    };
+  }, [hasShownExitIntent]);
 
   return (
-    <div className="min-h-screen bg-[#080808] text-white font-sans antialiased selection:bg-teal-500/30">
+    <div className="min-h-screen bg-[#080808] text-white font-sans antialiased selection:bg-teal-500/30 grainy-bg">
+      {/* Floating Side CTA */}
+      <div className="fixed right-0 top-1/2 -translate-y-1/2 z-[100] hidden lg:block">
+        <button
+          onClick={() => setModalOpen(true)}
+          className="bg-teal-500 hover:bg-teal-400 text-black font-bold py-4 px-2 rounded-l-xl transition-all duration-300 vertical-text shadow-[0_0_30px_rgba(20,184,166,0.3)] hover:translate-x-[-4px]"
+          style={{ writingMode: 'vertical-rl', textOrientation: 'mixed' }}
+        >
+          Secure Your Free Audit
+        </button>
+      </div>
+
+      {/* Scroll Progress */}
+      <div className="fixed top-0 left-0 right-0 h-1 z-50 bg-white/5">
+        <div 
+          className="h-full bg-gradient-to-r from-teal-500 to-cyan-500 transition-all duration-150 ease-out"
+          style={{ width: `${scrollProgress}%` }}
+        />
+      </div>
+
       {modalOpen && <AuditModal onClose={() => setModalOpen(false)} />}
+      {exitIntentOpen && (
+        <ExitIntentModal 
+          onClose={() => setExitIntentOpen(false)} 
+          onAccept={() => {
+            setExitIntentOpen(false);
+            setModalOpen(true);
+          }} 
+        />
+      )}
 
       {/* Nav */}
       <nav className={`fixed top-0 left-0 right-0 z-40 transition-all duration-300 border-b ${scrolled ? 'bg-black/80 backdrop-blur-md border-white/10 py-3' : 'bg-transparent border-transparent py-5'}`}>
         <div className="max-w-5xl mx-auto px-6 flex items-center justify-between">
-          <div className="flex items-center gap-2 group cursor-pointer">
-            <div className="w-8 h-8 bg-teal-500 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
-              <Zap className="w-4 h-4 text-black" fill="currentColor" />
+          <div className="flex items-center gap-6">
+            <div className="flex items-center gap-2 group cursor-pointer" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
+              <div className="w-8 h-8 bg-teal-500 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
+                <Zap className="w-4 h-4 text-black" fill="currentColor" />
+              </div>
+              <span className="font-bold text-white tracking-tight text-lg">Meridian AI</span>
             </div>
-            <span className="font-bold text-white tracking-tight text-lg">Meridian AI</span>
+            
+            {scrolled && (
+              <div className="hidden lg:flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-gray-500 animate-in fade-in slide-in-from-left-4 duration-500">
+                <span className="w-1 h-1 bg-gray-700 rounded-full" />
+                <span className="text-teal-500/50">{activeSection}</span>
+              </div>
+            )}
           </div>
+
           <div className="flex items-center gap-6">
             <button
-              onClick={() => setModalOpen(true)}
-              className="text-sm font-medium text-gray-400 hover:text-teal-400 transition-colors hidden sm:block"
+              onClick={() => document.getElementById('process')?.scrollIntoView({ behavior: 'smooth' })}
+              className={`text-sm font-medium transition-colors hidden sm:block ${activeSection === 'process' ? 'text-teal-400' : 'text-gray-400 hover:text-teal-400'}`}
             >
               How it works
             </button>
@@ -280,16 +556,23 @@ export default function App() {
       </nav>
 
       {/* Hero */}
-      <section className="px-6 pt-32 pb-20 max-w-5xl mx-auto text-center relative">
-        {/* Background glow */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-teal-500/10 blur-[120px] -z-10" />
+      <section id="hero" className="px-6 pt-32 pb-24 max-w-5xl mx-auto text-center relative overflow-hidden">
+        {/* Abstract Background Graphic */}
+        <div className="absolute inset-0 -z-10 opacity-40">
+           <img 
+            src="/Users/kacismith/.gemini/antigravity/brain/9d5bfc7e-0a7d-4bc7-b75b-6b2e6e3743ad/hero_bg_abstract_1776985339499.png" 
+            alt="Abstract Background" 
+            className="w-full h-full object-cover blur-sm"
+          />
+          <div className="absolute inset-0 bg-gradient-to-b from-[#080808]/0 via-[#080808]/50 to-[#080808]" />
+        </div>
 
         <div className="inline-flex items-center gap-2 bg-teal-500/10 border border-teal-500/20 rounded-full px-4 py-1.5 mb-8 animate-in fade-in slide-in-from-top-4 duration-500">
           <span className="w-1.5 h-1.5 bg-teal-400 rounded-full animate-pulse" />
-          <span className="text-teal-400 text-xs font-medium tracking-wide uppercase">AI Automation Consulting</span>
+          <span className="text-teal-400 text-[10px] font-bold tracking-widest uppercase">Expert AI Automation Consulting</span>
         </div>
 
-        <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold text-white leading-[1.08] tracking-tight mb-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+        <h1 className="text-5xl sm:text-6xl lg:text-8xl font-extrabold text-white leading-[1.05] tracking-tight mb-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
           Stop doing work
           <br />
           <span className="text-transparent bg-clip-text bg-gradient-to-r from-teal-400 to-cyan-400">
@@ -297,28 +580,31 @@ export default function App() {
           </span>
         </h1>
 
-        <p className="text-lg sm:text-xl text-gray-400 max-w-2xl mx-auto leading-relaxed mb-10 animate-in fade-in slide-in-from-bottom-6 duration-700">
-          We help growing businesses identify which operations can be automated with AI — and build those systems.
-          Less manual work. More consistent output. Fewer errors.
+        <p className="text-lg sm:text-xl text-gray-400 max-w-2xl mx-auto leading-relaxed mb-12 animate-in fade-in slide-in-from-bottom-6 duration-700">
+          We identify operational friction in your business and replace manual workflows with custom AI systems. 
+          Maximize your team's output without adding to the payroll.
         </p>
 
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-4 animate-in fade-in slide-in-from-bottom-8 duration-700">
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-4 animate-in fade-in slide-in-from-bottom-8 duration-700 mb-16">
           <button
             onClick={() => setModalOpen(true)}
-            className="inline-flex items-center gap-3 bg-teal-500 hover:bg-teal-400 text-black font-semibold px-8 py-4 rounded-xl transition-all duration-200 text-base group shadow-[0_8px_32px_rgba(20,184,166,0.25)]"
+            className="inline-flex items-center gap-3 bg-teal-500 hover:bg-teal-400 text-black font-bold px-10 py-5 rounded-2xl transition-all duration-300 text-lg group shadow-[0_12px_40px_rgba(20,184,166,0.3)] hover:scale-105 active:scale-95"
           >
-            Get Your Free Audit
-            <ArrowRight className="w-5 h-5 group-hover:translate-x-0.5 transition-transform" />
+            Start My Free Audit
+            <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
           </button>
           <button
-            className="inline-flex items-center gap-3 bg-white/5 hover:bg-white/10 border border-white/10 text-white font-semibold px-8 py-4 rounded-xl transition-all duration-200 text-base group"
+className="inline-flex items-center gap-3 bg-white/5 hover:bg-white/10 border border-white/10 text-white font-semibold px-10 py-5 rounded-2xl transition-all duration-300 text-lg group"
+            onClick={() => alert('Demo video coming soon!')}
           >
-            <Play className="w-4 h-4 fill-white" />
-            Watch Demo
+            <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center group-hover:bg-white/20 transition-colors">
+              <Play className="w-4 h-4 fill-white ml-0.5" />
+            </div>
+            See a Workflow in Action
           </button>
         </div>
 
-        <div className="flex items-center justify-center gap-8 mt-12">
+        <div className="flex items-center justify-center gap-8 mt-12 mb-16">
           <div className="flex -space-x-3">
             {[1, 2, 3, 4].map(i => (
               <div key={i} className="w-8 h-8 rounded-full border-2 border-[#080808] bg-gray-800 flex items-center justify-center text-[10px] font-bold text-gray-400">
@@ -329,6 +615,18 @@ export default function App() {
           <p className="text-gray-500 text-sm">
             Recently helped <span className="text-gray-300 font-medium">Bolt</span>, <span className="text-gray-300 font-medium">Stripe</span> & <span className="text-gray-300 font-medium">40+ others</span>
           </p>
+        </div>
+
+        {/* Integration Row */}
+        <div className="pt-12 border-t border-white/5 animate-in fade-in duration-1000">
+           <p className="text-[10px] text-gray-600 uppercase font-bold tracking-widest mb-8">Built on the world's most reliable automation stacks</p>
+           <div className="flex flex-wrap items-center justify-center gap-x-12 gap-y-6 opacity-40 hover:opacity-80 transition-opacity">
+              <div className="flex items-center gap-2 text-sm font-bold text-white"><Cpu className="w-4 h-4" /> OpenAI</div>
+              <div className="flex items-center gap-2 text-sm font-bold text-white"><Zap className="w-4 h-4" /> Zapier</div>
+              <div className="flex items-center gap-2 text-sm font-bold text-white"><Layers className="w-4 h-4" /> Make.com</div>
+              <div className="flex items-center gap-2 text-sm font-bold text-white"><Globe className="w-4 h-4" /> Anthropic</div>
+              <div className="flex items-center gap-2 text-sm font-bold text-white"><MessageSquare className="w-4 h-4" /> Slack</div>
+           </div>
         </div>
 
         {/* Stats */}
@@ -359,7 +657,8 @@ export default function App() {
       </section>
 
       {/* Lead Magnet */}
-      <section className="px-6 py-24 relative overflow-hidden">
+      <section id="audit" className="px-6 py-24 relative overflow-hidden bg-gradient-to-b from-[#080808] via-[#0c0c0c] to-[#080808]">
+        <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.03] pointer-events-none" />
         <div className="absolute bottom-0 right-0 w-[400px] h-[400px] bg-teal-500/5 blur-[100px] -z-10" />
         
         <div className="max-w-5xl mx-auto">
@@ -444,13 +743,17 @@ export default function App() {
                   ))}
                 </div>
 
-                <button
-                  onClick={() => setModalOpen(true)}
-                  className="w-full bg-teal-500 hover:bg-teal-400 text-black font-bold py-4 rounded-xl transition-all duration-300 flex items-center justify-center gap-2 group shadow-[0_4px_20px_rgba(20,184,166,0.3)]"
-                >
-                  Start Your Free Audit
-                  <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                </button>
+                <ExpandableChecklist />
+
+                <div className="mt-10">
+                  <button
+                    onClick={() => setModalOpen(true)}
+                    className="w-full bg-teal-500 hover:bg-teal-400 text-black font-bold py-4 rounded-xl transition-all duration-300 flex items-center justify-center gap-2 group shadow-[0_4px_20px_rgba(20,184,166,0.3)]"
+                  >
+                    Start Your Free Audit
+                    <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                  </button>
+                </div>
                 <div className="flex items-center justify-center gap-4 mt-6">
                    <div className="flex items-center gap-1">
                       <Star className="w-3 h-3 text-teal-400 fill-teal-400" />
@@ -476,9 +779,9 @@ export default function App() {
               Real results from growing businesses that chose to automate the mundane.
             </p>
           </div>
-          <div className="grid md:grid-cols-3 gap-8">
+          <div className="grid md:grid-cols-3 gap-8 mb-16">
             {testimonials.map((t, i) => (
-              <div key={i} className="p-8 rounded-2xl bg-white/[0.02] border border-white/10 hover:border-teal-500/30 transition-all duration-300 group">
+              <div key={i} className="p-8 rounded-2xl bg-white/[0.02] border border-white/10 hover:border-teal-500/30 transition-all duration-300 group shadow-[0_8px_30px_rgb(0,0,0,0.12)] hover:shadow-[0_20px_50px_rgba(20,184,166,0.1)]">
                 <div className="flex items-center gap-1 mb-6 text-teal-500">
                   <Star className="w-4 h-4 fill-teal-500" />
                   <Star className="w-4 h-4 fill-teal-500" />
@@ -499,11 +802,115 @@ export default function App() {
               </div>
             ))}
           </div>
+
+          {/* Video Spotlight */}
+          <div className="max-w-4xl mx-auto">
+             <div className="relative group cursor-pointer rounded-3xl overflow-hidden border border-white/10 shadow-2xl">
+                <img 
+                  src="https://images.unsplash.com/photo-1551434678-e076c223a692?auto=format&fit=crop&q=80&w=2070" 
+                  className="w-full h-[400px] object-cover opacity-60 group-hover:scale-105 transition-transform duration-700" 
+                  alt="Customer Spotlight"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent" />
+                <div className="absolute inset-0 flex flex-col items-center justify-center">
+                   <div className="w-20 h-20 bg-teal-500 rounded-full flex items-center justify-center shadow-[0_0_50px_rgba(20,184,166,0.5)] group-hover:scale-110 transition-transform">
+                      <Play className="w-8 h-8 text-black fill-black ml-1" />
+                   </div>
+                   <div className="mt-6 text-center">
+                      <p className="text-teal-400 font-bold uppercase tracking-widest text-xs mb-2">Customer Spotlight</p>
+                      <h3 className="text-2xl font-bold text-white">How Bolt saved 400+ hours with Meridian</h3>
+                   </div>
+                </div>
+             </div>
+          </div>
         </div>
       </section>
 
+      {/* Common Wins */}
+      <section id="wins" className="px-6 py-24 bg-[#0a0a0a] border-y border-white/5 relative">
+        <div className="max-w-5xl mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">Common Automation Wins</h2>
+            <p className="text-gray-400">Real-world examples of what we've solved for similar companies.</p>
+          </div>
+          <div className="grid md:grid-cols-2 gap-8">
+            {[
+              {
+                title: "Logistics Ops",
+                problem: "Manual data entry from 100+ daily manifests into CRM.",
+                win: "AI OCR system reduced data entry time by 85%.",
+                savings: "20 hours/week"
+              },
+              {
+                title: "SaaS Sales",
+                problem: "Lead qualification taking 48 hours per inquiry.",
+                win: "AI triage bot now qualifies leads in < 2 minutes.",
+                savings: "15% increase in conversion"
+              },
+              {
+                title: "Professional Services",
+                problem: "Repetitive reporting and invoice generation.",
+                win: "Automated pipeline saved $4k/month in admin costs.",
+                savings: "$48,000 annually"
+              },
+              {
+                title: "E-commerce Support",
+                problem: "High volume of 'Where is my order?' tickets.",
+                win: "AI agent handles 60% of tier-1 support autonomously.",
+                savings: "92% faster response time"
+              }
+            ].map((item, i) => (
+              <div key={i} className="p-8 rounded-2xl bg-white/[0.02] border border-white/10 hover:border-teal-500/20 transition-all group">
+                <div className="flex items-center justify-between mb-6">
+                  <span className="text-xs font-bold text-teal-400 uppercase tracking-widest">{item.title}</span>
+                  <div className="bg-teal-500/10 text-teal-400 text-[10px] font-bold px-2 py-1 rounded">-{item.savings}</div>
+                </div>
+                <div className="space-y-4">
+                  <div>
+                    <div className="text-[10px] text-gray-500 uppercase font-bold mb-1">Problem</div>
+                    <p className="text-gray-400 text-sm">{item.problem}</p>
+                  </div>
+                  <div className="pt-4 border-t border-white/5">
+                    <div className="text-[10px] text-teal-500/70 uppercase font-bold mb-1">Solution & Win</div>
+                    <p className="text-white text-sm font-medium">{item.win}</p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Before/After Section */}
+      <section className="px-6 py-24 bg-black relative overflow-hidden">
+         <div className="max-w-5xl mx-auto">
+            <div className="text-center mb-16">
+               <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4 uppercase tracking-tight">The Transformation</h2>
+               <p className="text-gray-400">From manual chaos to algorithmic clarity.</p>
+            </div>
+            <div className="rounded-3xl overflow-hidden border border-white/10 shadow-3xl bg-[#080808]">
+               <img 
+                src="/Users/kacismith/.gemini/antigravity/brain/9d5bfc7e-0a7d-4bc7-b75b-6b2e6e3743ad/before_after_infographic_1776985364571.png" 
+                alt="Before and After Automation Infographic" 
+                className="w-full h-auto"
+              />
+            </div>
+            <div className="mt-12 p-8 rounded-2xl bg-teal-500/5 border border-teal-500/10 text-center">
+               <h3 className="text-xl font-bold text-white mb-2">Ready to move to the right side?</h3>
+               <p className="text-gray-400 mb-6">Our audit identifies exactly which manual tasks are holding you back.</p>
+               <button 
+                  onClick={() => setModalOpen(true)}
+                  className="bg-teal-500 hover:bg-teal-400 text-black font-bold px-8 py-4 rounded-xl transition-all shadow-[0_10px_30px_rgba(20,184,166,0.2)]"
+                >
+                  Secure My Audit Now
+               </button>
+            </div>
+         </div>
+      </section>
+
       {/* Process */}
-      <section className="px-6 py-24">
+      <section id="process" className="px-6 py-24 relative overflow-hidden">
+        <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.02] pointer-events-none" />
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4 uppercase tracking-tight">The 3-Step Process</h2>
@@ -558,7 +965,7 @@ export default function App() {
       </section>
 
       {/* FAQ Section */}
-      <section className="px-6 py-24 bg-black">
+      <section id="faq" className="px-6 py-24 bg-black">
         <div className="max-w-3xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">Common Questions</h2>

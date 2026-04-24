@@ -143,3 +143,41 @@
 .animate-pulse-teal {
   animation: pulse-teal 2s infinite;
 }
+
+@keyframes bounce-horizontal {
+  0%, 100% { transform: translateX(-2px); }
+  50% { transform: translateX(2px); }
+}
+
+.animate-bounce-horizontal {
+  animation: bounce-horizontal 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse-slow {
+  0%, 100% { opacity: 0.4; transform: scale(1); }
+  50% { opacity: 0.8; transform: scale(1.05); }
+}
+
+.animate-pulse-slow {
+  animation: pulse-slow 4s ease-in-out infinite;
+}
+
+/* Custom shadow for cards */
+.shadow-3xl {
+  box-shadow: 0 35px 60px -15px rgba(0, 0, 0, 0.6);
+}
+
+.delay-700 { animation-delay: 700ms; }
+.delay-1000 { animation-delay: 1000ms; }
+
+/* Override slider styles for more control in JSX */
+.comparison-handle {
+  transform: translateX(-50%);
+  height: 100%;
+  width: 2px;
+  background: #14b8a6;
+}
+
+.comparison-handle::after {
+  display: none; /* We're building the handle in JSX now */
+}

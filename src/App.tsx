@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   ArrowRight,
+  ArrowLeft,
   CheckCircle,
   Search,
   BarChart3,
@@ -435,27 +436,42 @@ function AuditModal({ onClose }: { onClose: () => void }) {
 function ComparisonSlider({ beforeImage, afterImage }: { beforeImage: string, afterImage: string }) {
   const [position, setPosition] = useState(50);
   const [isResizing, setIsResizing] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
 
-  const handleMove = (e: React.MouseEvent | React.TouchEvent) => {
-    if (!isResizing) return;
-    
-    const container = (e.currentTarget as HTMLElement).getBoundingClientRect();
-    const x = 'touches' in e ? e.touches[0].clientX : e.clientX;
-    const newPosition = ((x - container.left) / container.width) * 100;
-    
-    setPosition(Math.min(Math.max(newPosition, 0), 100));
-  };
+  useEffect(() => {
+    const handleMove = (e: MouseEvent | TouchEvent) => {
+      if (!isResizing || !containerRef.current) return;
+      
+      const container = containerRef.current.getBoundingClientRect();
+      const x = 'touches' in e ? e.touches[0].clientX : e.clientX;
+      const newPosition = ((x - container.left) / container.width) * 100;
+      
+      setPosition(Math.min(Math.max(newPosition, 0), 100));
+    };
+
+    const handleEnd = () => setIsResizing(false);
+
+    if (isResizing) {
+      window.addEventListener('mousemove', handleMove);
+      window.addEventListener('touchmove', handleMove);
+      window.addEventListener('mouseup', handleEnd);
+      window.addEventListener('touchend', handleEnd);
+    }
+
+    return () => {
+      window.removeEventListener('mousemove', handleMove);
+      window.removeEventListener('touchmove', handleMove);
+      window.removeEventListener('mouseup', handleEnd);
+      window.removeEventListener('touchend', handleEnd);
+    };
+  }, [isResizing]);
 
   return (
     <div 
-      className="comparison-slider aspect-video relative cursor-ew-resize group"
+      ref={containerRef}
+      className="comparison-slider aspect-video relative cursor-ew-resize group select-none touch-none"
       onMouseDown={() => setIsResizing(true)}
-      onMouseUp={() => setIsResizing(false)}
-      onMouseLeave={() => setIsResizing(false)}
-      onMouseMove={handleMove}
       onTouchStart={() => setIsResizing(true)}
-      onTouchEnd={() => setIsResizing(false)}
-      onTouchMove={handleMove}
     >
       <div className="absolute inset-0 z-20 pointer-events-none">
         <div className="scan-line" />
@@ -463,32 +479,75 @@ function ComparisonSlider({ beforeImage, afterImage }: { beforeImage: string, af
 
       {/* Before Image */}
       <div className="absolute inset-0">
-        <img src={beforeImage} alt="Manual Chaos" className="comparison-image object-cover h-full w-full grayscale opacity-50" />
-        <div className="absolute top-6 left-6 z-10 px-3 py-1.5 bg-red-500/20 backdrop-blur-md border border-red-500/30 rounded-lg">
-          <span className="text-[10px] font-bold uppercase tracking-widest text-red-400">Manual Chaos</span>
+        <img src={beforeImage} alt="Manual Chaos" className="comparison-image object-cover h-full w-full grayscale opacity-40 brightness-50" />
+        <div className="absolute top-8 left-8 z-10 px-4 py-2 bg-black/60 backdrop-blur-xl border border-white/10 rounded-xl shadow-2xl">
+          <div className="flex items-center gap-2 mb-1">
+            <div className="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse" />
+            <span className="text-[10px] font-bold uppercase tracking-widest text-red-400">Current Reality</span>
+          </div>
+          <div className="text-sm font-bold text-white uppercase tracking-tight">Manual Chaos</div>
+        </div>
+        
+        {/* Chaos Markers */}
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+           <div className="absolute top-[20%] left-[30%] px-3 py-1 bg-red-500/10 border border-red-500/20 rounded-full backdrop-blur-sm animate-pulse-slow">
+              <span className="text-[8px] font-bold text-red-400/70 uppercase tracking-widest">Inefficiency Detected</span>
+           </div>
+           <div className="absolute bottom-[40%] right-[20%] px-3 py-1 bg-red-500/10 border border-red-500/20 rounded-full backdrop-blur-sm animate-pulse-slow delay-700">
+              <span className="text-[8px] font-bold text-red-400/70 uppercase tracking-widest">Lost Hours</span>
+           </div>
         </div>
       </div>
 
       {/* After Image */}
       <div 
-        className="comparison-overlay absolute inset-0 z-10"
+        className="comparison-overlay absolute inset-0 z-10 border-r border-teal-500/50"
         style={{ width: `${position}%` }}
       >
         <img src={afterImage} alt="Automated Clarity" className="comparison-image object-cover h-full w-full" />
-        <div className="absolute top-6 left-6 z-10 px-3 py-1.5 bg-teal-500/20 backdrop-blur-md border border-teal-500/30 rounded-lg whitespace-nowrap">
-          <span className="text-[10px] font-bold uppercase tracking-widest text-teal-400">Automated Clarity</span>
+        <div className="absolute top-8 left-8 z-10 px-4 py-2 bg-teal-500/20 backdrop-blur-xl border border-teal-500/30 rounded-xl shadow-[0_0_30px_rgba(20,184,166,0.2)]">
+          <div className="flex items-center gap-2 mb-1">
+            <div className="w-1.5 h-1.5 bg-teal-400 rounded-full animate-pulse" />
+            <span className="text-[10px] font-bold uppercase tracking-widest text-teal-400">Meridian Optimized</span>
+          </div>
+          <div className="text-sm font-bold text-white uppercase tracking-tight">System Clarity</div>
+        </div>
+
+        {/* Clarity Markers */}
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+           <div className="absolute top-[15%] left-[25%] px-3 py-1 bg-teal-500/10 border border-teal-500/20 rounded-full backdrop-blur-sm animate-pulse-slow">
+              <span className="text-[8px] font-bold text-teal-400/70 uppercase tracking-widest">Autonomous Core</span>
+           </div>
+           <div className="absolute bottom-[30%] right-[15%] px-3 py-1 bg-teal-500/10 border border-teal-500/20 rounded-full backdrop-blur-sm animate-pulse-slow delay-1000">
+              <span className="text-[8px] font-bold text-teal-400/70 uppercase tracking-widest">94% Faster</span>
+           </div>
         </div>
       </div>
 
       {/* Handle */}
       <div 
-        className="comparison-handle"
+        className="comparison-handle flex flex-col items-center justify-center gap-3 z-30"
         style={{ left: `${position}%` }}
-      />
+      >
+        <div className="h-full w-px bg-gradient-to-b from-transparent via-teal-500 to-transparent" />
+        <div className="w-10 h-10 bg-teal-500 rounded-full flex items-center justify-center shadow-[0_0_30px_rgba(20,184,166,0.5)] border-4 border-[#080808] group-hover:scale-110 transition-transform">
+          <div className="flex gap-1">
+             <div className="w-0.5 h-3 bg-black rounded-full" />
+             <div className="w-0.5 h-3 bg-black rounded-full" />
+          </div>
+        </div>
+        <div className="h-full w-px bg-gradient-to-b from-transparent via-teal-500 to-transparent" />
+      </div>
 
-      {/* Labels Overlay */}
-      <div className="absolute bottom-6 left-6 right-6 flex justify-between items-end z-20 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-        <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400">Drag to compare</div>
+      {/* Drag Hint */}
+      <div className={`absolute bottom-8 left-1/2 -translate-x-1/2 z-20 pointer-events-none transition-opacity duration-500 ${isResizing ? 'opacity-0' : 'opacity-100'}`}>
+        <div className="px-4 py-2 bg-black/60 backdrop-blur-md border border-white/10 rounded-full flex items-center gap-3">
+          <div className="flex gap-1 animate-bounce-horizontal">
+             <ArrowLeft className="w-3 h-3 text-gray-500" />
+             <ArrowRight className="w-3 h-3 text-gray-500" />
+          </div>
+          <span className="text-[10px] font-bold uppercase tracking-widest text-gray-300">Slide to reveal clarity</span>
+        </div>
       </div>
     </div>
   );
@@ -996,31 +1055,91 @@ export default function App() {
       </section>
 
       {/* Before/After Section */}
-      <section className="px-6 py-24 bg-black relative overflow-hidden">
+      <section className="px-6 py-32 bg-black relative overflow-hidden">
+         {/* Background Effects */}
+         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-px bg-gradient-to-r from-transparent via-teal-500/20 to-transparent" />
+         <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-full h-px bg-gradient-to-r from-transparent via-teal-500/20 to-transparent" />
+         <div className="absolute top-1/4 left-1/4 w-[600px] h-[600px] bg-teal-500/[0.02] blur-[150px] -z-10" />
+         <div className="absolute bottom-1/4 right-1/4 w-[600px] h-[600px] bg-cyan-500/[0.02] blur-[150px] -z-10" />
+
          <div className="max-w-5xl mx-auto">
-            <div className="text-center mb-16">
-               <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4 uppercase tracking-tight">The Transformation</h2>
-               <p className="text-gray-400">Interact with the slider below to see how we replace manual friction with system clarity.</p>
+            <div className="text-center mb-20 relative">
+               <div className="inline-flex items-center gap-2 bg-teal-500/10 border border-teal-500/20 rounded-full px-4 py-1.5 mb-6">
+                  <Layers className="w-3 h-3 text-teal-400" />
+                  <span className="text-teal-400 text-[10px] font-bold tracking-widest uppercase">The Transformation</span>
+               </div>
+               <h2 className="text-4xl sm:text-5xl font-extrabold text-white mb-6 tracking-tight leading-tight">
+                  From Operational Friction <br />
+                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-teal-400 to-cyan-400">to System Autonomy</span>
+               </h2>
+               <p className="text-gray-400 max-w-2xl mx-auto text-lg leading-relaxed">
+                  Most businesses are held back by manual processes that don't scale. 
+                  We replace the chaos of spreadsheets and internal pings with a single, automated operating system.
+               </p>
             </div>
-            <div className="rounded-3xl overflow-hidden border border-white/10 shadow-3xl bg-[#080808]">
-               <ComparisonSlider 
-                beforeImage="/assets/transformation-before.png" 
-                afterImage="/assets/transformation-after.png" 
-               />
+
+            <div className="relative group">
+               <div className="absolute -inset-1 bg-gradient-to-r from-teal-500/20 to-cyan-500/20 rounded-[2rem] blur-2xl opacity-50 group-hover:opacity-75 transition-opacity" />
+               <div className="relative rounded-3xl overflow-hidden border border-white/10 shadow-3xl bg-[#080808] z-10">
+                  <ComparisonSlider 
+                    beforeImage="/assets/transformation-before.png" 
+                    afterImage="/assets/transformation-after.png" 
+                  />
+               </div>
             </div>
-            <div className="mt-12 p-8 rounded-2xl bg-teal-500/5 border border-teal-500/10 text-center relative overflow-hidden group">
-               <div className="absolute inset-0 bg-gradient-to-r from-teal-500/0 via-teal-500/[0.02] to-teal-500/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
-               <h3 className="text-xl font-bold text-white mb-2">Ready to move to the right side?</h3>
-               <p className="text-gray-400 mb-6">Our audit identifies exactly which manual tasks are holding you back.</p>
-               <button 
-                  onClick={() => setModalOpen(true)}
-                  className="bg-teal-500 hover:bg-teal-400 text-black font-bold px-8 py-4 rounded-xl transition-all shadow-[0_10px_30px_rgba(20,184,166,0.2)] hover:scale-105 active:scale-95"
-                >
-                  Secure My Audit Now
-               </button>
+
+            <div className="grid sm:grid-cols-3 gap-8 mt-16">
+               {[
+                  { 
+                    label: 'Workflow speed', 
+                    before: '48-72 hours', 
+                    after: '< 2 minutes',
+                    desc: 'Lead triage and qualification'
+                  },
+                  { 
+                    label: 'Operational Cost', 
+                    before: '$12k/mo', 
+                    after: '$1.4k/mo',
+                    desc: 'Manual data entry labor'
+                  },
+                  { 
+                    label: 'Accuracy Rate', 
+                    before: '84%', 
+                    after: '99.9%',
+                    desc: 'Systemized data integrity'
+                  },
+               ].map((metric, i) => (
+                  <div key={i} className="p-6 rounded-2xl bg-white/[0.02] border border-white/5 premium-shadow-hover">
+                     <div className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-4">{metric.label}</div>
+                     <div className="flex items-center gap-4 mb-4">
+                        <div className="text-sm font-bold text-red-400 line-through opacity-50">{metric.before}</div>
+                        <ArrowRight className="w-3 h-3 text-gray-600" />
+                        <div className="text-lg font-extrabold text-teal-400">{metric.after}</div>
+                     </div>
+                     <p className="text-xs text-gray-500 leading-relaxed">{metric.desc}</p>
+                  </div>
+               ))}
+            </div>
+
+            <div className="mt-20 p-10 rounded-3xl bg-gradient-to-br from-teal-500/10 via-transparent to-transparent border border-teal-500/20 relative overflow-hidden group">
+               <div className="absolute inset-0 bg-gradient-to-r from-teal-500/0 via-teal-500/[0.05] to-teal-500/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-[1500ms]" />
+               
+               <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-8">
+                  <div className="text-center md:text-left">
+                     <h3 className="text-2xl font-bold text-white mb-3">Ready to reclaim your time?</h3>
+                     <p className="text-gray-400 text-lg">Our audit identifies exactly which manual tasks are ready for retirement.</p>
+                  </div>
+                  <button 
+                     onClick={() => setModalOpen(true)}
+                     className="bg-teal-500 hover:bg-teal-400 text-black font-bold px-10 py-5 rounded-2xl transition-all shadow-[0_10px_40px_rgba(20,184,166,0.3)] hover:scale-105 active:scale-95 flex items-center gap-3 whitespace-nowrap"
+                   >
+                     Secure My Free Audit
+                     <Zap className="w-5 h-5 fill-black" />
+                  </button>
+               </div>
             </div>
          </div>
-         <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-[#0a0a0a] to-transparent pointer-events-none" />
+         <div className="absolute bottom-0 left-0 right-0 h-64 bg-gradient-to-t from-[#080808] to-transparent pointer-events-none" />
       </section>
 
       {/* Process */}

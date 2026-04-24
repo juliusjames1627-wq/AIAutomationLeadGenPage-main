@@ -5,7 +5,6 @@ import {
   Search,
   BarChart3,
   MessageSquare,
-  ChevronRight,
   Zap,
   Clock,
   TrendingUp,
@@ -129,7 +128,7 @@ function ExpandableChecklist() {
 function ExitIntentModal({ onClose, onAccept }: { onClose: () => void, onAccept: () => void }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
-      <div className="bg-gradient-to-br from-[#111] to-[#0a0a0a] border border-teal-500/30 rounded-2xl p-10 max-w-lg w-full text-center shadow-[0_0_50px_rgba(20,184,166,0.15)] animate-in fade-in zoom-in duration-300 relative overflow-hidden">
+      <div className="premium-glass border-teal-500/30 rounded-3xl p-10 max-w-lg w-full text-center animate-in fade-in zoom-in duration-300 relative overflow-hidden">
         <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-teal-500 to-transparent" />
         <button
           onClick={onClose}
@@ -227,7 +226,7 @@ function AuditModal({ onClose }: { onClose: () => void }) {
         source: 'audit_modal'
       });
       setSubmitted(true);
-    } catch (err) {
+    } catch {
       setErrors({ submit: "Something went wrong. Please try again." });
     } finally {
       setIsSubmitting(false);
@@ -237,7 +236,7 @@ function AuditModal({ onClose }: { onClose: () => void }) {
   if (submitted) {
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
-        <div className="bg-[#111] border border-white/10 rounded-2xl p-10 max-w-md w-full text-center shadow-2xl animate-in fade-in zoom-in duration-300">
+        <div className="premium-glass rounded-3xl p-10 max-w-md w-full text-center animate-in fade-in zoom-in duration-300">
           <div className="w-16 h-16 bg-teal-500/10 border border-teal-500/30 rounded-full flex items-center justify-center mx-auto mb-5">
             <CheckCircle className="w-8 h-8 text-teal-400" />
           </div>
@@ -258,7 +257,7 @@ function AuditModal({ onClose }: { onClose: () => void }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm overflow-y-auto">
-      <div className="bg-[#111] border border-white/10 rounded-2xl p-8 max-w-lg w-full shadow-2xl relative my-8 animate-in fade-in slide-in-from-bottom-4 duration-300">
+      <div className="premium-glass rounded-3xl p-8 max-w-lg w-full relative my-8 animate-in fade-in slide-in-from-bottom-4 duration-300">
         <button
           onClick={onClose}
           className="absolute top-5 right-5 text-gray-500 hover:text-gray-300 transition-colors text-xl leading-none"
@@ -440,6 +439,7 @@ export default function App() {
   const [scrolled, setScrolled] = useState(false);
   const [scrollProgress, setScrollProgress] = useState(0);
   const [activeSection, setActiveSection] = useState('hero');
+  const [videoOpen, setVideoOpen] = useState(false);
 
   useEffect(() => {
     const handleMouseOut = (e: MouseEvent) => {
@@ -493,20 +493,40 @@ export default function App() {
       <div className="fixed right-0 top-1/2 -translate-y-1/2 z-[100] hidden lg:block">
         <button
           onClick={() => setModalOpen(true)}
-          className="bg-teal-500 hover:bg-teal-400 text-black font-bold py-4 px-2 rounded-l-xl transition-all duration-300 vertical-text shadow-[0_0_30px_rgba(20,184,166,0.3)] hover:translate-x-[-4px]"
+          className="premium-glass hover:bg-teal-500 hover:text-black text-teal-400 font-bold py-6 px-2 rounded-l-2xl transition-all duration-500 vertical-text shadow-[0_0_30px_rgba(0,0,0,0.3)] hover:shadow-[0_0_30px_rgba(20,184,166,0.3)] hover:translate-x-[-4px] border-r-0"
           style={{ writingMode: 'vertical-rl', textOrientation: 'mixed' }}
         >
           Secure Your Free Audit
         </button>
       </div>
 
-      {/* Scroll Progress */}
       <div className="fixed top-0 left-0 right-0 h-1 z-50 bg-white/5">
         <div 
           className="h-full bg-gradient-to-r from-teal-500 to-cyan-500 transition-all duration-150 ease-out"
           style={{ width: `${scrollProgress}%` }}
         />
       </div>
+
+      {videoOpen && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/90 backdrop-blur-md">
+          <div className="relative w-full max-w-5xl aspect-video rounded-3xl overflow-hidden border border-white/10 shadow-2xl">
+            <button 
+              onClick={() => setVideoOpen(false)}
+              className="absolute top-6 right-6 z-10 w-10 h-10 bg-black/50 hover:bg-black/80 rounded-full flex items-center justify-center text-white transition-colors"
+            >
+              ✕
+            </button>
+            <iframe 
+              className="w-full h-full"
+              src="https://www.youtube.com/embed/dQw4w9WgXcQ?autoplay=1" 
+              title="Workflow Demo"
+              frameBorder="0"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+              allowFullScreen
+            ></iframe>
+          </div>
+        </div>
+      )}
 
       {modalOpen && <AuditModal onClose={() => setModalOpen(false)} />}
       {exitIntentOpen && (
@@ -520,7 +540,7 @@ export default function App() {
       )}
 
       {/* Nav */}
-      <nav className={`fixed top-0 left-0 right-0 z-40 transition-all duration-300 border-b ${scrolled ? 'bg-black/80 backdrop-blur-md border-white/10 py-3' : 'bg-transparent border-transparent py-5'}`}>
+      <nav className={`fixed top-0 left-0 right-0 z-40 transition-all duration-500 border-b ${scrolled ? 'premium-glass border-white/10 py-3' : 'bg-transparent border-transparent py-5'}`}>
         <div className="max-w-5xl mx-auto px-6 flex items-center justify-between">
           <div className="flex items-center gap-6">
             <div className="flex items-center gap-2 group cursor-pointer" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
@@ -560,7 +580,7 @@ export default function App() {
         {/* Abstract Background Graphic */}
         <div className="absolute inset-0 -z-10 opacity-40">
            <img 
-            src="/Users/kacismith/.gemini/antigravity/brain/9d5bfc7e-0a7d-4bc7-b75b-6b2e6e3743ad/hero_bg_abstract_1776985339499.png" 
+            src="/assets/hero-bg.png" 
             alt="Abstract Background" 
             className="w-full h-full object-cover blur-sm"
           />
@@ -590,12 +610,12 @@ export default function App() {
             onClick={() => setModalOpen(true)}
             className="inline-flex items-center gap-3 bg-teal-500 hover:bg-teal-400 text-black font-bold px-10 py-5 rounded-2xl transition-all duration-300 text-lg group shadow-[0_12px_40px_rgba(20,184,166,0.3)] hover:scale-105 active:scale-95"
           >
-            Start My Free Audit
+            Secure Your Free Audit
             <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
           </button>
           <button
-className="inline-flex items-center gap-3 bg-white/5 hover:bg-white/10 border border-white/10 text-white font-semibold px-10 py-5 rounded-2xl transition-all duration-300 text-lg group"
-            onClick={() => alert('Demo video coming soon!')}
+            className="inline-flex items-center gap-3 bg-white/5 hover:bg-white/10 border border-white/10 text-white font-semibold px-10 py-5 rounded-2xl transition-all duration-300 text-lg group"
+            onClick={() => setVideoOpen(true)}
           >
             <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center group-hover:bg-white/20 transition-colors">
               <Play className="w-4 h-4 fill-white ml-0.5" />
@@ -620,12 +640,19 @@ className="inline-flex items-center gap-3 bg-white/5 hover:bg-white/10 border bo
         {/* Integration Row */}
         <div className="pt-12 border-t border-white/5 animate-in fade-in duration-1000">
            <p className="text-[10px] text-gray-600 uppercase font-bold tracking-widest mb-8">Built on the world's most reliable automation stacks</p>
-           <div className="flex flex-wrap items-center justify-center gap-x-12 gap-y-6 opacity-40 hover:opacity-80 transition-opacity">
-              <div className="flex items-center gap-2 text-sm font-bold text-white"><Cpu className="w-4 h-4" /> OpenAI</div>
-              <div className="flex items-center gap-2 text-sm font-bold text-white"><Zap className="w-4 h-4" /> Zapier</div>
-              <div className="flex items-center gap-2 text-sm font-bold text-white"><Layers className="w-4 h-4" /> Make.com</div>
-              <div className="flex items-center gap-2 text-sm font-bold text-white"><Globe className="w-4 h-4" /> Anthropic</div>
-              <div className="flex items-center gap-2 text-sm font-bold text-white"><MessageSquare className="w-4 h-4" /> Slack</div>
+           <div className="flex flex-wrap items-center justify-center gap-x-12 gap-y-6">
+              {[
+                { icon: Cpu, name: 'OpenAI' },
+                { icon: Zap, name: 'Zapier' },
+                { icon: Layers, name: 'Make.com' },
+                { icon: Globe, name: 'Anthropic' },
+                { icon: MessageSquare, name: 'Slack' },
+              ].map((item, i) => (
+                <div key={i} className="flex items-center gap-2 text-sm font-bold text-gray-500 hover:text-white transition-all duration-300 cursor-default group">
+                  <item.icon className="w-4 h-4 group-hover:text-teal-400 group-hover:scale-110 transition-all" />
+                  <span>{item.name}</span>
+                </div>
+              ))}
            </div>
         </div>
 
@@ -645,7 +672,8 @@ className="inline-flex items-center gap-3 bg-white/5 hover:bg-white/10 border bo
       </section>
 
       {/* Trust Row */}
-      <section className="py-12 border-y border-white/5 bg-white/[0.01]">
+      <section className="py-12 border-y border-white/5 bg-white/[0.01] relative">
+        <div className="absolute inset-0 bg-gradient-to-b from-teal-500/5 to-transparent pointer-events-none" />
         <div className="max-w-5xl mx-auto px-6">
           <div className="flex flex-wrap items-center justify-center gap-x-16 gap-y-8 opacity-30 grayscale hover:opacity-100 hover:grayscale-0 transition-all duration-500">
             <div className="flex items-center gap-2"><Building2 className="w-5 h-5" /><span className="font-bold text-lg">LOGOTECH</span></div>
@@ -695,7 +723,7 @@ className="inline-flex items-center gap-3 bg-white/5 hover:bg-white/10 border bo
                     desc: 'No jargon. Practical, honest advice on what makes sense for your team size and tech stack.',
                   },
                 ].map(item => (
-                  <div key={item.title} className="flex gap-5 p-5 rounded-2xl transition-all hover:bg-white/[0.04] group border border-white/5 hover:border-white/10" style={{ background: 'rgba(255,255,255,0.02)' }}>
+                  <div key={item.title} className="flex gap-5 p-5 rounded-2xl transition-all premium-shadow-hover group border border-white/5" style={{ background: 'rgba(255,255,255,0.02)' }}>
                     <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5 group-hover:scale-110 transition-transform" style={{ background: 'rgba(20,184,166,0.1)', border: '1px solid rgba(20,184,166,0.2)' }}>
                       <item.icon className="w-5 h-5 text-teal-400" />
                     </div>
@@ -705,6 +733,16 @@ className="inline-flex items-center gap-3 bg-white/5 hover:bg-white/10 border bo
                     </div>
                   </div>
                 ))}
+                <div className="mt-8 p-6 rounded-2xl bg-red-500/5 border border-red-500/10 relative overflow-hidden group">
+                  <div className="absolute top-0 right-0 p-3 opacity-10">
+                    <TrendingUp className="w-12 h-12 text-red-500" />
+                  </div>
+                  <h4 className="text-red-400 font-bold text-sm uppercase tracking-wider mb-2">The Cost of Inaction</h4>
+                  <p className="text-gray-400 text-sm leading-relaxed">
+                    Manual data entry errors cost mid-sized businesses an average of <span className="text-white font-bold">$12,000/month</span> in reclaimed labor and lost opportunities. 
+                    <span className="block mt-2 font-medium text-gray-300">That's $144k/year leaking from your bottom line.</span>
+                  </p>
+                </div>
               </div>
             </div>
 
@@ -781,7 +819,7 @@ className="inline-flex items-center gap-3 bg-white/5 hover:bg-white/10 border bo
           </div>
           <div className="grid md:grid-cols-3 gap-8 mb-16">
             {testimonials.map((t, i) => (
-              <div key={i} className="p-8 rounded-2xl bg-white/[0.02] border border-white/10 hover:border-teal-500/30 transition-all duration-300 group shadow-[0_8px_30px_rgb(0,0,0,0.12)] hover:shadow-[0_20px_50px_rgba(20,184,166,0.1)]">
+              <div key={i} className="p-8 rounded-2xl bg-white/[0.02] border border-white/10 premium-shadow-hover group">
                 <div className="flex items-center gap-1 mb-6 text-teal-500">
                   <Star className="w-4 h-4 fill-teal-500" />
                   <Star className="w-4 h-4 fill-teal-500" />
@@ -805,7 +843,10 @@ className="inline-flex items-center gap-3 bg-white/5 hover:bg-white/10 border bo
 
           {/* Video Spotlight */}
           <div className="max-w-4xl mx-auto">
-             <div className="relative group cursor-pointer rounded-3xl overflow-hidden border border-white/10 shadow-2xl">
+             <div 
+               onClick={() => setVideoOpen(true)}
+               className="relative group cursor-pointer rounded-3xl overflow-hidden border border-white/10 shadow-2xl"
+             >
                 <img 
                   src="https://images.unsplash.com/photo-1551434678-e076c223a692?auto=format&fit=crop&q=80&w=2070" 
                   className="w-full h-[400px] object-cover opacity-60 group-hover:scale-105 transition-transform duration-700" 
@@ -824,6 +865,8 @@ className="inline-flex items-center gap-3 bg-white/5 hover:bg-white/10 border bo
              </div>
           </div>
         </div>
+        <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+        <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
       </section>
 
       {/* Common Wins */}
@@ -860,7 +903,7 @@ className="inline-flex items-center gap-3 bg-white/5 hover:bg-white/10 border bo
                 savings: "92% faster response time"
               }
             ].map((item, i) => (
-              <div key={i} className="p-8 rounded-2xl bg-white/[0.02] border border-white/10 hover:border-teal-500/20 transition-all group">
+              <div key={i} className="p-8 rounded-2xl bg-white/[0.02] border border-white/10 premium-shadow-hover group">
                 <div className="flex items-center justify-between mb-6">
                   <span className="text-xs font-bold text-teal-400 uppercase tracking-widest">{item.title}</span>
                   <div className="bg-teal-500/10 text-teal-400 text-[10px] font-bold px-2 py-1 rounded">-{item.savings}</div>
@@ -890,22 +933,24 @@ className="inline-flex items-center gap-3 bg-white/5 hover:bg-white/10 border bo
             </div>
             <div className="rounded-3xl overflow-hidden border border-white/10 shadow-3xl bg-[#080808]">
                <img 
-                src="/Users/kacismith/.gemini/antigravity/brain/9d5bfc7e-0a7d-4bc7-b75b-6b2e6e3743ad/before_after_infographic_1776985364571.png" 
+                src="/assets/transformation.png" 
                 alt="Before and After Automation Infographic" 
                 className="w-full h-auto"
               />
             </div>
-            <div className="mt-12 p-8 rounded-2xl bg-teal-500/5 border border-teal-500/10 text-center">
+            <div className="mt-12 p-8 rounded-2xl bg-teal-500/5 border border-teal-500/10 text-center relative overflow-hidden group">
+               <div className="absolute inset-0 bg-gradient-to-r from-teal-500/0 via-teal-500/[0.02] to-teal-500/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
                <h3 className="text-xl font-bold text-white mb-2">Ready to move to the right side?</h3>
                <p className="text-gray-400 mb-6">Our audit identifies exactly which manual tasks are holding you back.</p>
                <button 
                   onClick={() => setModalOpen(true)}
-                  className="bg-teal-500 hover:bg-teal-400 text-black font-bold px-8 py-4 rounded-xl transition-all shadow-[0_10px_30px_rgba(20,184,166,0.2)]"
+                  className="bg-teal-500 hover:bg-teal-400 text-black font-bold px-8 py-4 rounded-xl transition-all shadow-[0_10px_30px_rgba(20,184,166,0.2)] hover:scale-105 active:scale-95"
                 >
                   Secure My Audit Now
                </button>
             </div>
          </div>
+         <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-[#0a0a0a] to-transparent pointer-events-none" />
       </section>
 
       {/* Process */}
@@ -941,7 +986,7 @@ className="inline-flex items-center gap-3 bg-white/5 hover:bg-white/10 border bo
                 title: 'Together walk-through',
                 desc: "A 45-minute working session where we share findings and give you a clear picture of what's possible.",
               },
-            ].map((item, i) => (
+            ].map((item) => (
               <div key={item.step} className="relative rounded-2xl p-8 transition-all hover:bg-white/[0.04] group border border-white/5" style={{ background: 'rgba(255,255,255,0.02)' }}>
                 <div className="flex items-center gap-4 mb-6">
                   <div className="w-12 h-12 rounded-xl flex items-center justify-center group-hover:bg-teal-500 group-hover:scale-110 transition-all duration-300" style={{ background: 'rgba(20,184,166,0.1)', border: '1px solid rgba(20,184,166,0.2)' }}>
@@ -995,7 +1040,7 @@ className="inline-flex items-center gap-3 bg-white/5 hover:bg-white/10 border bo
               onClick={() => setModalOpen(true)}
               className="w-full sm:w-auto inline-flex items-center justify-center gap-3 bg-teal-500 hover:bg-teal-400 text-black font-bold px-10 py-5 rounded-2xl transition-all duration-300 text-lg group shadow-[0_10px_40px_rgba(20,184,166,0.3)]"
             >
-              Get Your Free Audit
+              Secure Your Free Audit
               <ArrowRight className="w-6 h-6 group-hover:translate-x-1 transition-transform" />
             </button>
           </div>

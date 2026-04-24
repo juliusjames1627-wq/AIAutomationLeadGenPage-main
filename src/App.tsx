@@ -432,6 +432,69 @@ function AuditModal({ onClose }: { onClose: () => void }) {
 }
 
 
+function ComparisonSlider({ beforeImage, afterImage }: { beforeImage: string, afterImage: string }) {
+  const [position, setPosition] = useState(50);
+  const [isResizing, setIsResizing] = useState(false);
+
+  const handleMove = (e: React.MouseEvent | React.TouchEvent) => {
+    if (!isResizing) return;
+    
+    const container = (e.currentTarget as HTMLElement).getBoundingClientRect();
+    const x = 'touches' in e ? e.touches[0].clientX : e.clientX;
+    const newPosition = ((x - container.left) / container.width) * 100;
+    
+    setPosition(Math.min(Math.max(newPosition, 0), 100));
+  };
+
+  return (
+    <div 
+      className="comparison-slider aspect-video relative cursor-ew-resize group"
+      onMouseDown={() => setIsResizing(true)}
+      onMouseUp={() => setIsResizing(false)}
+      onMouseLeave={() => setIsResizing(false)}
+      onMouseMove={handleMove}
+      onTouchStart={() => setIsResizing(true)}
+      onTouchEnd={() => setIsResizing(false)}
+      onTouchMove={handleMove}
+    >
+      <div className="absolute inset-0 z-20 pointer-events-none">
+        <div className="scan-line" />
+      </div>
+
+      {/* Before Image */}
+      <div className="absolute inset-0">
+        <img src={beforeImage} alt="Manual Chaos" className="comparison-image object-cover h-full w-full grayscale opacity-50" />
+        <div className="absolute top-6 left-6 z-10 px-3 py-1.5 bg-red-500/20 backdrop-blur-md border border-red-500/30 rounded-lg">
+          <span className="text-[10px] font-bold uppercase tracking-widest text-red-400">Manual Chaos</span>
+        </div>
+      </div>
+
+      {/* After Image */}
+      <div 
+        className="comparison-overlay absolute inset-0 z-10"
+        style={{ width: `${position}%` }}
+      >
+        <img src={afterImage} alt="Automated Clarity" className="comparison-image object-cover h-full w-full" />
+        <div className="absolute top-6 left-6 z-10 px-3 py-1.5 bg-teal-500/20 backdrop-blur-md border border-teal-500/30 rounded-lg whitespace-nowrap">
+          <span className="text-[10px] font-bold uppercase tracking-widest text-teal-400">Automated Clarity</span>
+        </div>
+      </div>
+
+      {/* Handle */}
+      <div 
+        className="comparison-handle"
+        style={{ left: `${position}%` }}
+      />
+
+      {/* Labels Overlay */}
+      <div className="absolute bottom-6 left-6 right-6 flex justify-between items-end z-20 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+        <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400">Drag to compare</div>
+      </div>
+    </div>
+  );
+}
+
+
 export default function App() {
   const [modalOpen, setModalOpen] = useState(false);
   const [exitIntentOpen, setExitIntentOpen] = useState(false);
@@ -608,7 +671,7 @@ export default function App() {
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4 animate-in fade-in slide-in-from-bottom-8 duration-700 mb-16">
           <button
             onClick={() => setModalOpen(true)}
-            className="inline-flex items-center gap-3 bg-teal-500 hover:bg-teal-400 text-black font-bold px-10 py-5 rounded-2xl transition-all duration-300 text-lg group shadow-[0_12px_40px_rgba(20,184,166,0.3)] hover:scale-105 active:scale-95"
+            className="inline-flex items-center gap-3 bg-teal-500 hover:bg-teal-400 text-black font-bold px-10 py-5 rounded-2xl transition-all duration-300 text-lg group shadow-[0_12px_40px_rgba(20,184,166,0.3)] hover:scale-105 active:scale-95 animate-pulse-teal"
           >
             Secure Your Free Audit
             <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
@@ -648,9 +711,10 @@ export default function App() {
                 { icon: Globe, name: 'Anthropic' },
                 { icon: MessageSquare, name: 'Slack' },
               ].map((item, i) => (
-                <div key={i} className="flex items-center gap-2 text-sm font-bold text-gray-500 hover:text-white transition-all duration-300 cursor-default group">
-                  <item.icon className="w-4 h-4 group-hover:text-teal-400 group-hover:scale-110 transition-all" />
-                  <span>{item.name}</span>
+                <div key={i} className="flex items-center gap-2 text-sm font-bold text-gray-500 hover:text-teal-400 transition-all duration-300 cursor-default group relative">
+                  <div className="absolute inset-0 bg-teal-500/20 blur-lg rounded-full opacity-0 group-hover:opacity-100 transition-opacity" />
+                  <item.icon className="w-4 h-4 group-hover:scale-110 transition-all relative z-10" />
+                  <span className="relative z-10">{item.name}</span>
                 </div>
               ))}
            </div>
@@ -686,7 +750,9 @@ export default function App() {
 
       {/* Lead Magnet */}
       <section id="audit" className="px-6 py-24 relative overflow-hidden bg-gradient-to-b from-[#080808] via-[#0c0c0c] to-[#080808]">
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-px bg-gradient-to-r from-transparent via-teal-500/20 to-transparent" />
         <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.03] pointer-events-none" />
+        <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-teal-500/[0.03] blur-[120px] -z-10 animate-pulse" />
         <div className="absolute bottom-0 right-0 w-[400px] h-[400px] bg-teal-500/5 blur-[100px] -z-10" />
         
         <div className="max-w-5xl mx-auto">
@@ -903,19 +969,24 @@ export default function App() {
                 savings: "92% faster response time"
               }
             ].map((item, i) => (
-              <div key={i} className="p-8 rounded-2xl bg-white/[0.02] border border-white/10 premium-shadow-hover group">
-                <div className="flex items-center justify-between mb-6">
-                  <span className="text-xs font-bold text-teal-400 uppercase tracking-widest">{item.title}</span>
-                  <div className="bg-teal-500/10 text-teal-400 text-[10px] font-bold px-2 py-1 rounded">-{item.savings}</div>
+              <div key={i} className="p-8 rounded-2xl bg-white/[0.02] border border-white/10 premium-shadow-hover group relative overflow-hidden">
+                <div className="absolute inset-0 z-0 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div className="scan-line" />
                 </div>
-                <div className="space-y-4">
-                  <div>
-                    <div className="text-[10px] text-gray-500 uppercase font-bold mb-1">Problem</div>
-                    <p className="text-gray-400 text-sm">{item.problem}</p>
+                <div className="relative z-10">
+                  <div className="flex items-center justify-between mb-6">
+                    <span className="text-xs font-bold text-teal-400 uppercase tracking-widest">{item.title}</span>
+                    <div className="bg-teal-500/10 text-teal-400 text-[10px] font-bold px-2 py-1 rounded">-{item.savings}</div>
                   </div>
-                  <div className="pt-4 border-t border-white/5">
-                    <div className="text-[10px] text-teal-500/70 uppercase font-bold mb-1">Solution & Win</div>
-                    <p className="text-white text-sm font-medium">{item.win}</p>
+                  <div className="space-y-4">
+                    <div>
+                      <div className="text-[10px] text-gray-500 uppercase font-bold mb-1">Problem</div>
+                      <p className="text-gray-400 text-sm">{item.problem}</p>
+                    </div>
+                    <div className="pt-4 border-t border-white/5">
+                      <div className="text-[10px] text-teal-500/70 uppercase font-bold mb-1">Solution & Win</div>
+                      <p className="text-white text-sm font-medium">{item.win}</p>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -929,14 +1000,13 @@ export default function App() {
          <div className="max-w-5xl mx-auto">
             <div className="text-center mb-16">
                <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4 uppercase tracking-tight">The Transformation</h2>
-               <p className="text-gray-400">From manual chaos to algorithmic clarity.</p>
+               <p className="text-gray-400">Interact with the slider below to see how we replace manual friction with system clarity.</p>
             </div>
             <div className="rounded-3xl overflow-hidden border border-white/10 shadow-3xl bg-[#080808]">
-               <img 
-                src="/assets/transformation.png" 
-                alt="Before and After Automation Infographic" 
-                className="w-full h-auto"
-              />
+               <ComparisonSlider 
+                beforeImage="/assets/transformation-before.png" 
+                afterImage="/assets/transformation-after.png" 
+               />
             </div>
             <div className="mt-12 p-8 rounded-2xl bg-teal-500/5 border border-teal-500/10 text-center relative overflow-hidden group">
                <div className="absolute inset-0 bg-gradient-to-r from-teal-500/0 via-teal-500/[0.02] to-teal-500/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
